@@ -1,15 +1,22 @@
 #!/bin/sh
-# Keeps the private research layer out of history.
+# Keeps the private research layer, medical data, weights and secrets out of history.
 #
 # Enable once per clone:  git config core.hooksPath .githooks
 #
 # Refuses, whatever `git add -f` says:
-#   - the private paths (research protocol, organ research, curation notes);
-#   - any staged file carrying the private marker, so a private document that
-#     is renamed or pasted into a public one is still caught;
-#   - medical data and weight files.
+#   1. the private paths (research protocol, organ research, curation notes);
+#   2. any staged file carrying the private marker, so a private document that
+#      is renamed or pasted into a public one is still caught;
+#   3. any staged file that an ignore rule covers: .gitignore lists medical
+#      data, archives, weights, secrets and local fonts, and forcing one past
+#      it is exactly the mistake this hook exists for;
+#   4. images outside docs/figures/png/, where a medical image could hide as a
+#      plain .png or .jpg;
+#   5. documents outside the public ones (README, CATALOGUE, docs/, and each
+#      specialist's MODEL_CARD.md and DATA.md), so an unmarked curation note
+#      cannot slip in under a new name.
 # There is no skip flag. If it blocks something legitimate, that is a
-# conversation, not a --no-verify.
+# conversation and an edit to this file, not a --no-verify.
 
 status=0
 marker='BODY-ATLAS-''PRIVATE'
@@ -17,25 +24,30 @@ marker='BODY-ATLAS-''PRIVATE'
 paths=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -z "$paths" ] && exit 0
 
-private=$(printf '%s\n' "$paths" | grep -E '(^|/)(RESEARCH-PROTOCOL\.md|thoughtprocess\.md)$|^(research|private)/')
-if [ -n "$private" ]; then
-  printf 'pre-commit: private research layer staged:\n%s\n' "$private" >&2
-  status=1
-fi
+refuse() {
+  if [ -n "$2" ]; then
+    printf 'pre-commit: %s:\n%s\n' "$1" "$2" >&2
+    status=1
+  fi
+}
 
-data=$(printf '%s\n' "$paths" | grep -Ei '\.(dcm|dicom|nii|nii\.gz|nrrd|mha|mhd|svs|ndpi|mrxs|pt|pth|ckpt|safetensors|onnx|tflite|mlmodel|gguf)$')
-if [ -n "$data" ]; then
-  printf 'pre-commit: medical data or weights staged:\n%s\n' "$data" >&2
-  status=1
-fi
+refuse "private research layer staged" \
+  "$(printf '%s\n' "$paths" | grep -E '(^|/)(RESEARCH-PROTOCOL\.md|thoughtprocess\.md)$|^(research|private)/')"
 
-marked=$(printf '%s\n' "$paths" | while IFS= read -r f; do
-  [ "$f" = ".githooks/pre-commit" ] && continue
-  git show ":$f" 2>/dev/null | grep -q "$marker" && printf '%s\n' "$f"
-done)
-if [ -n "$marked" ]; then
-  printf 'pre-commit: file carries the private marker:\n%s\n' "$marked" >&2
-  status=1
-fi
+refuse "file carries the private marker" \
+  "$(printf '%s\n' "$paths" | while IFS= read -r f; do
+      [ "$f" = ".githooks/pre-commit" ] && continue
+      git show ":$f" 2>/dev/null | grep -q "$marker" && printf '%s\n' "$f"
+    done)"
+
+refuse "file covered by an ignore rule (data, weights, secrets or fonts) was forced in" \
+  "$(printf '%s\n' "$paths" | git check-ignore --no-index --stdin)"
+
+refuse "image outside docs/figures/png/" \
+  "$(printf '%s\n' "$paths" | grep -Ei '\.(png|jpe?g|gif|bmp|webp|heic)$' | grep -v '^docs/figures/png/')"
+
+refuse "document outside the public set (README, CATALOGUE, docs/, MODEL_CARD.md, DATA.md)" \
+  "$(printf '%s\n' "$paths" | grep -Ei '\.(md|markdown|txt|rtf|pdf|docx?|odt|pages)$' \
+     | grep -Ev '^(README\.md|CATALOGUE\.md|CONTRIBUTING\.md|docs/.+|systems/[^/]+/[^/]+/(MODEL_CARD|DATA)\.md)$')"
 
 exit $status
