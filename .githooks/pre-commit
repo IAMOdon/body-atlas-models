@@ -1,0 +1,41 @@
+#!/bin/sh
+# Keeps the private research layer out of history.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+#
+# Refuses, whatever `git add -f` says:
+#   - the private paths (research protocol, organ research, curation notes);
+#   - any staged file carrying the private marker, so a private document that
+#     is renamed or pasted into a public one is still caught;
+#   - medical data and weight files.
+# There is no skip flag. If it blocks something legitimate, that is a
+# conversation, not a --no-verify.
+
+status=0
+marker='BODY-ATLAS-''PRIVATE'
+
+paths=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$paths" ] && exit 0
+
+private=$(printf '%s\n' "$paths" | grep -E '(^|/)(RESEARCH-PROTOCOL\.md|thoughtprocess\.md)$|^(research|private)/')
+if [ -n "$private" ]; then
+  printf 'pre-commit: private research layer staged:\n%s\n' "$private" >&2
+  status=1
+fi
+
+data=$(printf '%s\n' "$paths" | grep -Ei '\.(dcm|dicom|nii|nii\.gz|nrrd|mha|mhd|svs|ndpi|mrxs|pt|pth|ckpt|safetensors|onnx|tflite|mlmodel|gguf)$')
+if [ -n "$data" ]; then
+  printf 'pre-commit: medical data or weights staged:\n%s\n' "$data" >&2
+  status=1
+fi
+
+marked=$(printf '%s\n' "$paths" | while IFS= read -r f; do
+  [ "$f" = ".githooks/pre-commit" ] && continue
+  git show ":$f" 2>/dev/null | grep -q "$marker" && printf '%s\n' "$f"
+done)
+if [ -n "$marked" ]; then
+  printf 'pre-commit: file carries the private marker:\n%s\n' "$marked" >&2
+  status=1
+fi
+
+exit $status

@@ -117,6 +117,15 @@ Thumbs.db
 *.swp
 *~
 
-# --- Private notebook ----------------------------------------------------
+# --- Fonts ---------------------------------------------------------------
+# Lora and Poppins are fetched locally for the figures, not redistributed.
+docs/fonts/
+
+# --- Private research layer ----------------------------------------------
+# Research method, organ descriptions and dataset curation stay local. The
+# public side is CATALOGUE.md, an index. The pre-commit hook refuses these
+# paths even when forced with `git add -f`.
+RESEARCH-PROTOCOL.md
+research/
 thoughtprocess.md
 private/
