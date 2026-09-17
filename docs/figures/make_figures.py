@@ -362,10 +362,10 @@ def fig03_specialists():
     systems, n_organs, _ = read_index()
     fig, ax = frame(
         "one specialist per organ",
-        "a small open model for each organ, loaded when that organ is studied. "
+        "a small model for each organ, loaded when that organ is studied. "
         "adding an organ never changes another.",
-        f"design, no model trained  ·  {n_organs} organs in CATALOGUE.md  ·  each specialist "
-        "ships its notebook, model card and data record, open",
+        f"design, no model trained  ·  {n_organs} organs in CATALOGUE.md  ·  notebooks open, "
+        "weights licensed model by model from their training data",
         glow="mousse", seed=2603)
 
     # --- left: the atlas ----------------------------------------------------
@@ -453,7 +453,99 @@ def fig03_specialists():
     save(fig, "03_specialists.png")
 
 
-FIGURES = [fig01_atlas_map, fig02_learning_path, fig03_specialists]
+# =============================================================================
+#  FIGURE 04 — the licences
+#  One licence for the repository, one licence per model. The counts are the
+#  weights ceilings of the register in CATALOGUE.md, read at run time. A
+#  ceiling is a limit, not a grant: nothing here has been released.
+# =============================================================================
+CEILING_ROWS = [
+    ("P", "cc0  ·  cc by  ·  mit  ·  open notices", "permissive, attribution where required"),
+    ("SA", "cc by-sa", "share-alike, same licence"),
+    ("NC", "cc by-nc  ·  nc-sa  ·  non-commercial terms", "non-commercial only"),
+    ("X", "agreements  ·  credentials  ·  no derivatives", "not published without permission"),
+    ("U", "missing  ·  conflicting  ·  per-source terms", "held back until confirmed"),
+]
+
+
+def read_ceilings():
+    counts = {k: 0 for k, _, _ in CEILING_ROWS}
+    header = None
+    for line in open(CATALOGUE, encoding="utf-8"):
+        if line.startswith("| Dataset |"):
+            header = [c.strip() for c in line.strip().strip("|").split("|")]
+            continue
+        if header and re.match(r"^\| .+ \| \d{4}-\d{2}-\d{2} \|\s*$", line):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            ceiling = cells[header.index("Weights ceiling")]
+            if ceiling.startswith("Permissive"):
+                counts["P"] += 1
+            elif ceiling.startswith("Share-alike"):
+                counts["SA"] += 1
+            elif ceiling.startswith("Non-commercial"):
+                counts["NC"] += 1
+            elif ceiling.startswith(("Not shareable", "Not publishable", "None:", "Only under")):
+                counts["X"] += 1
+            elif ceiling.startswith(("Undetermined", "Depends")):
+                counts["U"] += 1
+            else:
+                sys.exit(f"unclassified weights ceiling: {ceiling}")
+    if not sum(counts.values()):
+        sys.exit("no weights ceiling column found in CATALOGUE.md")
+    return counts
+
+
+def fig04_licences():
+    counts = read_ceilings()
+    total = sum(counts.values())
+    fig, ax = frame(
+        "the weights follow the data",
+        "one licence for the repository. one licence per model, never wider than "
+        "the data it was trained on.",
+        f"weights ceilings of the {total} datasets in CATALOGUE.md, researched with their "
+        "licences on 17 september 2026  ·  a project rule, not legal advice",
+        glow="braise", seed=2604)
+
+    # --- the repository -------------------------------------------------------
+    ax.text(MARGIN, 640, "the repository", fontname="Poppins", fontsize=7.4, color=INK)
+    pill(ax, MARGIN, 585, 560, 50, "code  ·  notebooks  ·  catalogue  ·  documents",
+         edge=GRID, colour=INK2, size=6.2)
+    arrow(ax, MARGIN + 572, MARGIN + 632, 585)
+    ax.text(MARGIN + 650, 585, "one permissive licence for the whole project",
+            fontname="Poppins", fontsize=6.4, color=INK, va="center")
+    ax.plot([MARGIN, W - MARGIN], [520, 520], color=GRID, lw=0.8)
+
+    # --- the weights ----------------------------------------------------------
+    ax.text(MARGIN, 480, "the weights, one licence per model", fontname="Poppins",
+            fontsize=7.4, color=INK)
+    lx, lw_, rx, rw, bx = MARGIN, 440, 640, 400, 1110
+    ax.text(lx, 440, "terms of the training data", fontname="Poppins", fontsize=5.6,
+            color=MUTED, va="center")
+    ax.text(rx, 440, "ceiling for the model's weights", fontname="Poppins", fontsize=5.6,
+            color=MUTED, va="center")
+    ax.text(bx, 440, "datasets in the index", fontname="Poppins", fontsize=5.6,
+            color=MUTED, va="center")
+    bmax = W - MARGIN - bx - 60
+    top = max(counts.values())
+    for i, (key, terms, ceiling) in enumerate(CEILING_ROWS):
+        y = 390 - i * 58
+        pill(ax, lx, y, lw_, 42, terms, edge=GRID, colour=INK2, size=5.8)
+        arrow(ax, lx + lw_ + 10, rx - 10, y)
+        pill(ax, rx, y, rw, 42, ceiling, edge=GRID, colour=INK, size=6.0)
+        blen = max(4, bmax * counts[key] / top)
+        ax.add_patch(FancyBboxPatch((bx, y - 6), blen, 12,
+                     boxstyle="round,pad=0,rounding_size=4", facecolor=INK2,
+                     edgecolor="none", alpha=0.55, zorder=3))
+        ax.text(bx + blen + 14, y, str(counts[key]), fontname="Poppins", fontsize=6.0,
+                color=INK2, va="center")
+
+    ax.text(MARGIN, 100, "trained on several datasets, a model takes the most restrictive "
+            "of their terms", fontname="Poppins", fontsize=6.2, color=INK2)
+
+    save(fig, "04_licences.png")
+
+
+FIGURES = [fig01_atlas_map, fig02_learning_path, fig03_specialists, fig04_licences]
 
 if __name__ == "__main__":
     for f in FIGURES:

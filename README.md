@@ -88,7 +88,7 @@ model per organ**, each a self-contained open-source artefact.
 - **Adding an organ never changes another.** A new organ is one new model and one new
   notebook. Nothing already published is retrained, so no published result moves.
 - **Licences stay separable.** Each organ's data comes with its own terms, and each
-  specialist's weights can follow exactly those terms.
+  specialist's weights carry exactly those terms, no wider: one licence per model.
 
 ### The hybrid option, kept closed for now
 
@@ -106,8 +106,9 @@ systems/
   <system>/
     <organ>/
       notebook.ipynb     # normal anatomy, data, training, evaluation, errors
-      MODEL_CARD.md      # educational purpose, out-of-scope use, data, limits
-      DATA.md            # datasets used, licence, access terms, citation
+      MODEL_CARD.md      # educational purpose, out-of-scope use, data, limits,
+                         # weights licence and the dataset that sets it
+      DATA.md            # datasets used, licence, weights ceiling, access, citation
 ```
 
 Data is never stored here. Each notebook fetches its datasets under their own terms,
@@ -126,21 +127,39 @@ status.
 Normal-anatomy datasets are listed before pathology datasets. No dataset enters the
 index unless it could be verified, and listing a dataset is not a ranking.
 
-The licence column matters as much as the data. Many medical datasets are
-non-commercial, research-only, or behind a data use agreement, and **trained weights
-inherit those constraints**. A specialist whose data forbids redistribution can still
-have its notebook published even when its weights cannot be.
+The licence column matters as much as the data, and the catalogue carries a second one
+beside it: the **ceiling on the licence of any model trained on that dataset**. A
+specialist whose data forbids redistribution can still have its notebook published
+even when its weights cannot be.
 
-## Licence (proposal, not yet chosen)
+## Licences: the repository, and each model
 
-No licence file is committed yet; Armand will decide. The proposal:
+Two kinds of licence live here, and they are kept apart.
 
-- **Code and notebooks: Apache License 2.0.** Permissive, with an explicit patent grant.
+**The repository** (code, notebooks, the catalogue, the documents) carries one
+permissive licence. Proposed, not yet chosen by Armand:
+
+- **Code and notebooks: Apache License 2.0**, permissive with an explicit patent grant.
 - **Documents (README, catalogue, model cards): CC BY 4.0.**
-- **Weights: per specialist,** never more permissive than the training data allows. A
-  specialist trained on CC BY-NC data ships NC weights, or ships no weights at all.
 
-Until a licence is chosen, all rights are reserved by default.
+Until that choice is made, all rights are reserved by default.
+
+**The weights** carry **one licence per model**, set by the data that model was trained
+on and never wider than it. A model trained on CC0 or CC BY data can be released
+permissively, with the same attribution. A model trained on non-commercial data stays
+non-commercial. A model trained under a data use agreement, credentialed access or
+no-derivatives terms is not published without the provider's permission. When terms
+are missing or contradict each other, the weights are held back until they are
+confirmed. A model trained on several datasets takes the most restrictive of their
+terms. This is a project rule, applied conservatively because whether trained weights
+are derived from their data is not settled law.
+
+Licences are researched in the same pass as the datasets themselves. The
+[catalogue](CATALOGUE.md#two-licences-kept-apart) gives the full rule table, the
+weights ceiling of every dataset, and for each organ the best ceiling its sources allow.
+Each model card will state its licence and the dataset that sets it.
+
+![The weights follow the data: one licence for the repository, one licence per model set by its training data](docs/figures/png/04_licences.png)
 
 ## References
 
