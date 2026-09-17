@@ -1,0 +1,122 @@
+# Body Atlas Models — ignore rules
+#
+# This repository holds code, notebooks and documents. It never holds medical
+# data, patient images, or trained weights. Datasets are fetched by each user
+# under that dataset's own licence and terms; weights are published as release
+# artefacts once their training data's licence has been checked (CATALOGUE.md).
+
+# --- Datasets and medical images -----------------------------------------
+# Most datasets in the catalogue forbid redistribution, and some are behind a
+# signed data use agreement. A single committed file can breach that licence
+# and cannot be removed from history once pushed.
+data/
+datasets/
+raw/
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+*.nrrd
+*.mha
+*.mhd
+*.raw
+*.svs
+*.ndpi
+*.mrxs
+*.tif
+*.tiff
+*.h5
+*.hdf5
+*.npz
+*.npy
+*.zarr/
+*.parquet
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# --- Trained weights and exported models ---------------------------------
+# Weights inherit the constraints of the data they were trained on. They are
+# released deliberately, never committed.
+weights/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.onnx
+*.tflite
+*.mlmodel
+*.mlpackage/
+*.mlmodelc/
+*.gguf
+
+# --- Training runs and experiment trackers -------------------------------
+runs/
+outputs/
+logs/
+lightning_logs/
+wandb/
+mlruns/
+tensorboard/
+
+# --- Notebooks -----------------------------------------------------------
+# Notebooks are tracked; their autosave directory is not.
+.ipynb_checkpoints/
+
+# --- Python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+build/
+dist/
+wheels/
+.eggs/
+
+# --- Environments --------------------------------------------------------
+.venv/
+venv/
+env/
+.python-version
+.conda/
+
+# --- Test and tooling caches ---------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+.huggingface/
+.kaggle/
+kaggle.json
+
+# --- Secrets -------------------------------------------------------------
+# Kaggle, PhysioNet, Synapse and Hugging Face tokens will exist locally once
+# notebooks start fetching data. Never here.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Editors and OS ------------------------------------------------------
+.DS_Store
+.AppleDouble
+._*
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# --- Private notebook ----------------------------------------------------
+thoughtprocess.md
+private/

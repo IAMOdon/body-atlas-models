@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refuses a commit message carrying an attribution trailer or a mention of
+# assistance. No skip flag.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+if grep -v '^#' "$1" | grep -Eiq 'co-authored-by|generated (with|by) (claude|chatgpt|copilot|an ai)|with (the )?assistance (of|from)'; then
+  echo "commit-msg: attribution trailer or mention of assistance." >&2
+  exit 1
+fi
