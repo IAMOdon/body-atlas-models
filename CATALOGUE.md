@@ -25,6 +25,10 @@ at the end, which gives the identifier, licence, access terms and verification s
 of each. **Listing is not a recommendation or a ranking.** Licences differ widely, and
 trained weights can never be more permissive than their data.
 
+![The body, as it is taught: twelve chapters and forty organs, with the public data found for each](docs/figures/png/01_atlas_map.png)
+
+![Healthy first, then disease: the order followed through every organ, and what a model adds at each step](docs/figures/png/02_learning_path.png)
+
 ## Contents
 
 0. [Foundations](#0-foundations)

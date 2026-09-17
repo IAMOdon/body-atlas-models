@@ -47,6 +47,10 @@ The regulatory reading above is the project's working position, not legal advice
 
 ## How the atlas is organised
 
+![The body, as it is taught: twelve chapters and forty organs, with the public data found for each](docs/figures/png/01_atlas_map.png)
+
+![Healthy first, then disease: system, organ, structure, the normal organ, the imaging modality, then pathology](docs/figures/png/02_learning_path.png)
+
 **Systems first, as in an anatomy course.** Nervous, cardiovascular, respiratory,
 digestive, urinary, reproductive, endocrine, lymphatic and blood, musculoskeletal,
 integumentary, and the special senses. Each system lists its organs, each organ its
@@ -70,6 +74,8 @@ then moves to disease.
 
 The atlas does not use one large model for the whole body. It uses **one specialist
 model per organ**, each a self-contained open-source artefact.
+
+![One specialist per organ, loaded when that organ is studied, adding recognition, segmentation, 3D reconstruction and comparison](docs/figures/png/03_specialists.png)
 
 - **It follows the way the subject is taught.** An organ is a chapter. Its notebook
   reads end to end: the healthy anatomy, the data, the model, what it gets right, what
@@ -106,6 +112,9 @@ systems/
 
 Data is never stored here. Each notebook fetches its datasets under their own terms,
 and every user accepts those terms directly with the provider.
+
+The figures are drawn by [`docs/figures/make_figures.py`](docs/figures/make_figures.py),
+which reads the atlas map straight from the catalogue.
 
 ## The catalogue
 
