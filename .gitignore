@@ -49,10 +49,9 @@ checkpoints/
 *.bin
 *.onnx
 *.tflite
-*.mlmodel
-*.mlpackage/
-*.mlmodelc/
 *.gguf
+# Any other binary export is caught by the pre-commit hook, which refuses
+# binary files outside docs/figures/png/ whatever their extension.
 
 # --- Training runs and experiment trackers -------------------------------
 runs/
@@ -109,7 +108,6 @@ kaggle.json
 
 # --- Editors and OS ------------------------------------------------------
 .DS_Store
-.AppleDouble
 ._*
 Thumbs.db
 .idea/

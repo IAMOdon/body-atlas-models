@@ -14,7 +14,11 @@
 #      plain .png or .jpg;
 #   5. documents outside the public ones (README, CATALOGUE, docs/, and each
 #      specialist's MODEL_CARD.md and DATA.md), so an unmarked curation note
-#      cannot slip in under a new name.
+#      cannot slip in under a new name;
+#   6. any binary file outside docs/figures/png/, whatever its extension, and
+#      any file over 5 MiB. The ignore rules list the weight formats worth
+#      naming; this catches the rest, including formats invented later, so no
+#      exported model or medical image can arrive under an unknown suffix.
 # There is no skip flag. If it blocks something legitimate, that is a
 # conversation and an edit to this file, not a --no-verify.
 
@@ -49,5 +53,17 @@ refuse "image outside docs/figures/png/" \
 refuse "document outside the public set (README, CATALOGUE, docs/, MODEL_CARD.md, DATA.md)" \
   "$(printf '%s\n' "$paths" | grep -Ei '\.(md|markdown|txt|rtf|pdf|docx?|odt|pages)$' \
      | grep -Ev '^(README\.md|CATALOGUE\.md|CONTRIBUTING\.md|docs/.+|systems/[^/]+/[^/]+/(MODEL_CARD|DATA)\.md)$')"
+
+# git itself decides what is binary: numstat prints "-" for both counts.
+refuse "binary file outside docs/figures/png/" \
+  "$(git diff --cached --numstat --diff-filter=ACMR \
+     | awk -F'\t' '$1 == "-" && $2 == "-" { print $3 }' \
+     | grep -v '^docs/figures/png/')"
+
+refuse "file over 5 MiB" \
+  "$(printf '%s\n' "$paths" | while IFS= read -r f; do
+      size=$(git cat-file -s "$(git rev-parse ":$f" 2>/dev/null)" 2>/dev/null || echo 0)
+      [ "$size" -gt 5242880 ] && printf '%s (%s bytes)\n' "$f" "$size"
+    done)"
 
 exit $status
