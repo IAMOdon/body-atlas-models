@@ -99,16 +99,21 @@ It is not adopted in advance, and not for convenience.
 
 ### What each specialist will contain
 
-Planned layout, not yet created:
+Layout, one folder per organ and one sub-folder per use (the brain is the first
+module: [`organs/nervous-system/brain/`](organs/nervous-system/brain/)):
 
 ```text
-systems/
+organs/
   <system>/
     <organ>/
-      notebook.ipynb     # normal anatomy, data, training, evaluation, errors
-      MODEL_CARD.md      # educational purpose, out-of-scope use, data, limits,
-                         # weights licence and the dataset that sets it
-      DATA.md            # datasets used, licence, weights ceiling, access, citation
+      README.md            # the organ's uses and the dataset chosen for each
+      DATASETS.md          # per use: dataset retained, why, alternatives, licence
+      <use>/
+        README.md          # what the use teaches, its dataset, its licence
+        DATA.md            # how the data is fetched, under the provider's terms
+        MODEL_CARD.md      # educational purpose, out-of-scope use, data, limits,
+                           # weights licence and the dataset that sets it
+        notebook.ipynb     # healthy anatomy, data, training, evaluation, errors
 ```
 
 Data is never stored here. Each notebook fetches its datasets under their own terms,
