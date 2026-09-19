@@ -19,9 +19,10 @@
 #  drift from the committed index.
 #
 #  USAGE
-#      pip install pillow matplotlib numpy
+#      pip install pillow matplotlib numpy      (and oxipng, for lossless size)
 #      python docs/figures/make_figures.py
-#  -> writes the PNGs to docs/figures/png/
+#  -> writes the PNGs to docs/figures/png/ (organ figures in png/<organ>/),
+#     each passed through oxipng without loss when oxipng is installed
 #  Fonts: Lora-Variable.ttf, Lora-Italic-Variable.ttf, Poppins-Light.ttf
 #  in docs/fonts/ (not versioned) or ~/Library/Fonts.
 # =============================================================================
@@ -29,6 +30,8 @@
 import logging
 import os
 import re
+import shutil
+import subprocess
 import sys
 
 import numpy as np
@@ -150,14 +153,20 @@ def arrow(ax, x0, x1, y, colour=MUTED):
                                 shrinkA=0, shrinkB=0, mutation_scale=7))
 
 
-def save(fig, name):
-    os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, name)
+def save(fig, name, subdir=""):
+    out = os.path.join(OUT, subdir)
+    os.makedirs(out, exist_ok=True)
+    path = os.path.join(out, name)
     fig.savefig(path, dpi=DPI)
     plt.close(fig)
     with Image.open(path) as im:
         if im.size != (W, H):
             print(f"  !! {name}: {im.size}, expected {(W, H)}")
+    # lossless recompression: same pixels, smaller file
+    if shutil.which("oxipng"):
+        subprocess.run(["oxipng", "-q", "-o", "4", "--strip", "safe", path], check=True)
+    else:
+        print("  !! oxipng not found: PNG left uncompressed")
     print("wrote", os.path.relpath(path, ROOT))
 
 
@@ -545,7 +554,209 @@ def fig04_licences():
     save(fig, "04_licences.png")
 
 
-FIGURES = [fig01_atlas_map, fig02_learning_path, fig03_specialists, fig04_licences]
+# =============================================================================
+#  BRAIN MODULE — organs/nervous-system/brain/
+#  Two schematics. Every dataset name drawn here must be listed as Retained or
+#  Companion in the module's DATASETS.md: the script stops otherwise, so a
+#  figure can never show a choice the module no longer makes.
+# =============================================================================
+BRAIN_DIR = os.path.join(ROOT, "organs", "nervous-system", "brain")
+
+
+def brain_retained():
+    names = []
+    for line in open(os.path.join(BRAIN_DIR, "DATASETS.md"), encoding="utf-8"):
+        if line.startswith(("| **Retained**", "| **Companion**")):
+            names.append(line.split("|")[2])
+    if not names:
+        sys.exit("no Retained or Companion rows found in the brain DATASETS.md")
+    return names
+
+
+def check_brain_names(shown):
+    rows = brain_retained()
+    for name in shown:
+        if not any(name in r for r in rows):
+            sys.exit(f"brain figure shows '{name}', which DATASETS.md does not retain")
+
+
+BRAIN_USES = [
+    # (short label, datasets as drawn, datasets as named in DATASETS.md)
+    ("1 · healthy structures", ["Mindboggle-101", "Decathlon hippocampus"],
+     ["Mindboggle-101", "Medical Segmentation Decathlon"]),
+    ("2 · healthy vessels", ["TopCoW"], ["TopCoW"]),
+    ("3 · classification", ["Cheng tumour set", "RSNA ICH 2019"],
+     ["Cheng", "RSNA Intracranial Hemorrhage 2019"]),
+    ("4 · lesion segmentation", ["BraTS · Decathlon", "ISLES 2022 · MSLesSeg"],
+     ["BraTS", "ISLES 2022", "MSLesSeg", "MS3SEG"]),
+    ("5 · 3D reconstruction", ["ICBM152 2009", "SPL/NAC atlas"],
+     ["MNI ICBM152 2009", "Open Anatomy SPL/NAC brain atlas"]),
+]
+
+# rows, and what each use does on each row:
+#   "N" healthy labels confirmed in the retained data   (blue, filled)
+#   "n" healthy structure planned, labels to confirm     (blue, ring)
+#   "P" pathology labels                                 (orange, filled)
+#   "3" rebuilt in 3D from the 2D outputs                (ink ring)
+BRAIN_ROWS = [
+    ("the brain as a whole case", ["", "", "P", "", ""]),
+    ("cerebral cortex", ["N", "", "", "P", "3"]),
+    ("cerebral white matter", ["n", "", "", "P", "3"]),
+    ("deep grey nuclei", ["n", "", "", "P", "3"]),
+    ("hippocampus", ["N", "", "", "", "3"]),
+    ("ventricles", ["n", "", "", "", "3"]),
+    ("brainstem", ["n", "", "", "", "3"]),
+    ("cerebellum", ["n", "", "", "", "3"]),
+    ("arteries of the circle of Willis", ["", "N", "", "", "3"]),
+]
+
+
+def mark(ax, x, y, kind, s=46):
+    if kind == "N":
+        ax.scatter([x], [y], s=s, color=BLUE, zorder=4)
+    elif kind == "n":
+        ax.scatter([x], [y], s=s, facecolors="none", edgecolors=BLUE,
+                   linewidths=1.1, zorder=4)
+    elif kind == "P":
+        ax.scatter([x], [y], s=s, color=ORANGE, zorder=4)
+    elif kind == "3":
+        ax.scatter([x], [y], s=s, facecolors="none", edgecolors=INK2,
+                   linewidths=1.0, linestyle=(0, (1.5, 1.5)), zorder=4)
+
+
+def fig05_brain_map():
+    check_brain_names([n for _, _, names in BRAIN_USES for n in names])
+    fig, ax = frame(
+        "the brain, structure by structure",
+        "eight structures and five uses, built in order. each use is its own model, "
+        "trained on its own data.",
+        "schematic, no model trained  ·  retained datasets read from "
+        "organs/nervous-system/brain/DATASETS.md, checked 17 september 2026",
+        glow="acier", seed=2605)
+
+    cols = [600 + i * 200 for i in range(len(BRAIN_USES))]
+    for x, (label, shown, _) in zip(cols, BRAIN_USES):
+        ax.text(x, 650, label, fontname="Poppins", fontsize=6.2, color=INK,
+                ha="center", va="center")
+        for k, name in enumerate(shown):
+            ax.text(x, 624 - k * 20, name, fontname="Poppins", fontsize=5.0,
+                    color=MUTED, ha="center", va="center")
+
+    top, step = 552, 45
+    for i, (name, marks) in enumerate(BRAIN_ROWS):
+        y = top - i * step - (14 if i > 0 else 0)
+        if i == 1:
+            ax.plot([MARGIN, cols[-1] + 60], [y + step / 2 + 4, y + step / 2 + 4],
+                    color=GRID, lw=0.8)
+        ax.text(MARGIN, y, name, fontname="Poppins", fontsize=6.0,
+                color=INK if i == 0 else INK2, va="center")
+        ax.plot([MARGIN + 330, cols[-1] + 60], [y, y], color=GRID, lw=0.5,
+                alpha=0.6, zorder=1)
+        for x, m in zip(cols, marks):
+            if m:
+                mark(ax, x, y, m)
+
+    ly = 108
+    items = [("N", "healthy labels in the chosen data"),
+             ("n", "healthy structure, labels to confirm"),
+             ("P", "pathology labels"),
+             ("3", "rebuilt in 3D from the 2D outputs")]
+    lx = MARGIN
+    for kind, text in items:
+        mark(ax, lx + 6, ly, kind, s=36)
+        ax.text(lx + 22, ly, text, fontname="Poppins", fontsize=5.6, color=INK2,
+                va="center")
+        lx += 22 + len(text) * 8.6 + 40
+
+    save(fig, "01_structures_and_uses.png", subdir="brain")
+
+
+def fig06_brain_healthy_to_lesion():
+    check_brain_names(["Mindboggle-101", "TopCoW", "BraTS", "ISLES 2022", "MSLesSeg",
+                       "MS3SEG", "Cheng", "RSNA Intracranial Hemorrhage 2019",
+                       "MNI ICBM152 2009"])
+    fig, ax = frame(
+        "every lesion is read against the healthy brain",
+        "use 1 comes first. each lesion is then shown among the healthy structures "
+        "it sits in, with its expert label beside it.",
+        "schematic, no model trained  ·  datasets from "
+        "organs/nervous-system/brain/DATASETS.md  ·  for learning, never to say what a "
+        "person has",
+        glow="braise", seed=2606)
+
+    # --- left: the healthy reference ----------------------------------------
+    lx, lw = MARGIN, 320
+    ax.text(lx, 640, "the healthy brain", fontname="Poppins", fontsize=7.4, color=INK)
+    ax.add_patch(FancyBboxPatch((lx, 300), lw, 300,
+                 boxstyle="round,pad=0,rounding_size=12", facecolor=PANEL,
+                 edgecolor=BLUE, linewidth=1.0, zorder=3))
+    ax.text(lx + 20, 572, "use 1  ·  structures", fontname="Poppins", fontsize=6.2,
+            color=INK, va="center", zorder=4)
+    for k, s in enumerate(["cortex, white matter", "deep grey nuclei, hippocampus",
+                           "ventricles, brainstem, cerebellum"]):
+        ax.text(lx + 20, 536 - k * 30, s, fontname="Poppins", fontsize=5.8,
+                color=INK2, va="center", zorder=4)
+    ax.plot([lx + 20, lx + lw - 20], [432, 432], color=GRID, lw=0.8, zorder=4)
+    ax.text(lx + 20, 404, "use 2  ·  named arteries", fontname="Poppins", fontsize=6.2,
+            color=INK, va="center", zorder=4)
+    ax.text(lx + 20, 372, "circle of Willis", fontname="Poppins", fontsize=5.8,
+            color=INK2, va="center", zorder=4)
+    ax.text(lx + 20, 326, "Mindboggle-101  ·  TopCoW", fontname="Poppins", fontsize=5.0,
+            color=MUTED, va="center", zorder=4)
+
+    # --- middle: the lesions, as labelled ------------------------------------
+    mx, mw = 600, 460
+    ax.text(mx, 640, "the lesion, as labelled", fontname="Poppins", fontsize=7.4,
+            color=INK)
+    lesions = [
+        ("tumour sub-regions", "MRI", "BraTS  ·  Decathlon", "4"),
+        ("ischaemic stroke", "MRI", "ISLES 2022", "4"),
+        ("multiple sclerosis", "MRI", "MSLesSeg  ·  MS3SEG", "4"),
+        ("tumour type", "MRI", "Cheng tumour set", "3"),
+        ("haemorrhage", "CT", "RSNA ICH 2019", "3"),
+    ]
+    ys = [578 - i * 66 for i in range(len(lesions))]
+    for y, (name, mod, data, use) in zip(ys, lesions):
+        pill(ax, mx, y, mw, 46, "", edge=ORANGE if use == "4" else GRID)
+        ax.text(mx + 18, y + 8, name, fontname="Poppins", fontsize=6.2, color=INK,
+                va="center", zorder=5)
+        ax.text(mx + 18, y - 12, f"use {use}  ·  {mod}", fontname="Poppins",
+                fontsize=5.0, color=MUTED, va="center", zorder=5)
+        ax.text(mx + mw - 18, y, data, fontname="Poppins", fontsize=5.4, color=INK2,
+                va="center", ha="right", zorder=5)
+        ax.annotate("", xy=(mx - 6, y), xytext=(lx + lw + 6, 450), zorder=2,
+                    arrowprops=dict(arrowstyle="-|>", color=BLUE, lw=0.8, alpha=0.55,
+                                    shrinkA=0, shrinkB=0, mutation_scale=6))
+    ax.text(mx, ys[-1] - 50, "orange edge: outlined (use 4)   ·   grey edge: classified, "
+            "one label per case (use 3)", fontname="Poppins", fontsize=5.4, color=MUTED,
+            va="center")
+
+    # --- right: what the student compares ------------------------------------
+    rx = 1140
+    ax.text(rx, 640, "what a student compares", fontname="Poppins", fontsize=7.4,
+            color=INK)
+    for k, s in enumerate(["which healthy structures it sits in",
+                           "what it displaces or replaces",
+                           "how its signal differs from healthy tissue",
+                           "the expert label beside every output"]):
+        y = 578 - k * 66
+        ax.scatter([rx + 8], [y], s=40, facecolors="none",
+                   edgecolors=ORANGE if k < 3 else INK2, linewidths=1.1, zorder=4)
+        ax.text(rx + 28, y, s, fontname="Poppins", fontsize=5.8, color=INK2,
+                va="center")
+
+    # --- bottom: then in 3D -----------------------------------------------------
+    ax.plot([MARGIN, W - MARGIN], [170, 170], color=GRID, lw=0.8)
+    mark(ax, MARGIN + 8, 132, "3", s=40)
+    ax.text(MARGIN + 28, 132, "then in 3D (use 5): lesion and healthy structures rebuilt "
+            "together, placed in the MNI ICBM152 2009 reference space",
+            fontname="Poppins", fontsize=6.0, color=INK2, va="center")
+
+    save(fig, "02_healthy_to_lesion.png", subdir="brain")
+
+
+FIGURES = [fig01_atlas_map, fig02_learning_path, fig03_specialists, fig04_licences,
+           fig05_brain_map, fig06_brain_healthy_to_lesion]
 
 if __name__ == "__main__":
     for f in FIGURES:

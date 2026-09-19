@@ -2,7 +2,7 @@
 
 *Nervous system · brain. The first organ module of Body Atlas Models.*
 
-> **Status: datasets selected, 19 September 2026.** No model has been trained and no data
+> **Status: datasets selected and figures drawn, 19 September 2026.** No model has been trained and no data
 > has been downloaded. For learning anatomy and pathology from labelled public cases,
 > never to say what a person has (see the [root README](../../../README.md#learning-never-diagnosis)).
 
@@ -19,6 +19,38 @@ uses, built in this order, each in its own folder:
 
 The full selection, with the reasons, the alternatives set aside and the access terms,
 is in **[DATASETS.md](DATASETS.md)**.
+
+## The map: structures and uses
+
+![The brain, structure by structure: eight structures in rows, the five uses in columns](../../../docs/figures/png/brain/01_structures_and_uses.png)
+
+Read it row by row. Each row is a structure a student learns to find; each column is one
+of the five uses, with the dataset it is built on under its name. A **filled blue** dot
+means the retained data already carries manual labels for that healthy structure (the
+cortex in Mindboggle-101, the hippocampus in the Decathlon task, the named arteries in
+TopCoW). A **blue ring** means the structure is part of use 1 but its labels still have
+to be confirmed in the files, as [DATASETS.md](DATASETS.md#1-healthy-structure-segmentation-mri)
+states. **Orange** marks pathology labels: classification works on the whole case, lesion
+segmentation within the tissue. The **dashed ring** of the last column is the 3D stage,
+which rebuilds every structure from the 2D outputs rather than learning from new data.
+The figure is a plan: no model has been trained.
+
+## Healthy first, then the lesion
+
+![Every lesion is read against the healthy brain: the healthy structures of uses 1 and 2 on the left, the labelled lesions in the middle, what a student compares on the right](../../../docs/figures/png/brain/02_healthy_to_lesion.png)
+
+This is the order the module teaches in. On the left, the healthy brain: the structures
+of use 1 and the named arteries of use 2. In the middle, each pathology as its dataset
+labels it: tumour sub-regions, stroke and multiple sclerosis are **outlined** (use 4,
+orange edge); tumour type and haemorrhage are **classified**, one label per case (use 3,
+grey edge). Each arrow says the same thing: a lesion is shown among the healthy
+structures it sits in, never on its own. On the right, what a student is asked to
+compare, always with the expert label beside the model's output. Last, use 5 rebuilds
+lesion and healthy structures together in 3D, in the MNI ICBM152 2009 reference space.
+The figure draws no result: no model has been trained.
+
+Both figures are drawn by [`docs/figures/make_figures.py`](../../../docs/figures/make_figures.py),
+which stops if a dataset name it draws is no longer retained in `DATASETS.md`.
 
 ## One model per use, one licence per model
 
