@@ -16,7 +16,9 @@
 #      organ module's README.md and DATASETS.md, and each use's README.md, DATA.md and
 #      MODEL_CARD.md), so an unmarked curation note cannot slip in under a
 #      new name;
-#   6. any binary file outside docs/figures/png/, whatever its extension, and
+#   6. a notebook that still holds its outputs: a rendered slice would carry a
+#      piece of the MRI into git, and the data is never redistributed here;
+#   7. any binary file outside docs/figures/png/, whatever its extension, and
 #      any file over 5 MiB. The ignore rules list the weight formats worth
 #      naming; this catches the rest, including formats invented later, so no
 #      exported model or medical image can arrive under an unknown suffix.
@@ -54,6 +56,11 @@ refuse "image outside docs/figures/png/" \
 refuse "document outside the public set (README, CATALOGUE, docs/, organ READMEs, DATA.md, MODEL_CARD.md)" \
   "$(printf '%s\n' "$paths" | grep -Ei '\.(md|markdown|txt|rtf|pdf|docx?|odt|pages)$' \
      | grep -Ev '^(README\.md|CATALOGUE\.md|CONTRIBUTING\.md|docs/.+|organs/[^/]+/[^/]+/(README|DATASETS)\.md|organs/[^/]+/[^/]+/[^/]+/(README|DATA|MODEL_CARD)\.md)$')"
+
+refuse "notebook with stored outputs (clear them: the data is not redistributed)" \
+  "$(printf '%s\n' "$paths" | grep -Ei '\.ipynb$' | while IFS= read -r f; do
+      git show ":$f" 2>/dev/null | grep -q '"output_type"' && printf '%s\n' "$f"
+    done)"
 
 # git itself decides what is binary: numstat prints "-" for both counts.
 refuse "binary file outside docs/figures/png/" \

@@ -1,0 +1,117 @@
+{
+  "purpose": "learning anatomy, never diagnosis",
+  "what_this_is": "One optimised training run of colab_train.py on a GPU runtime. The notebook in this folder runs a much smaller demonstrator; these are the numbers of the real run, reported here so the notebook, the figure and the model card all read the same file.",
+  "run": {
+    "date": "2026-09-26",
+    "script": "colab_train.py",
+    "script_sha256": "94d4aeee985b667af62cdd1222a2ed5555b3886e9c9210843afcee2affce122a",
+    "seed": 20260926,
+    "environment": {
+      "device": "Tesla T4",
+      "torch": "2.11.0+cu128",
+      "cuda": "12.8",
+      "python": "3.13.15"
+    },
+    "training": {
+      "epochs": 60,
+      "best_epoch": 47,
+      "best_val_mean_dice": 0.9135,
+      "seconds": 2089.9,
+      "total_seconds": 2097,
+      "val_mean_dice_first_epoch": 0.43,
+      "val_mean_dice_plateau": 0.91,
+      "note": "only these three points of the validation curve were recorded; the per-epoch history stayed on the runtime"
+    },
+    "weights": "not kept: regenerable from colab_train.py with this seed and config, and the image terms forbid publishing them"
+  },
+  "config": {
+    "crop": 192,
+    "context": 1,
+    "input_slices": 3,
+    "base_channels": 16,
+    "depth": 4,
+    "parameters": 1942764,
+    "batch_size": 32,
+    "lr": 0.003,
+    "warmup_epochs": 3,
+    "schedule": "cosine after warmup",
+    "amp": true,
+    "dice_weight": 0.5,
+    "augmentation": {
+      "flip": 0.5,
+      "rotate_deg": 12,
+      "scale": 0.1,
+      "shift": 0.06,
+      "gamma": 0.25,
+      "noise": 0.02
+    }
+  },
+  "dataset": {
+    "name": "Mindboggle-101",
+    "doi": "10.5281/zenodo.22070005",
+    "files_verified": 8,
+    "checksums": {
+      "Mindboggle101_release3.zip": "7178353814033f9f56dc97bdef2d68e4",
+      "Mindboggle101_templates.zip": "004cf36fb3e04da8c25f3aef73c85fad",
+      "DKT_classifier_evaluation.zip": "6449062bf5f103ed094178669ffeb4ac",
+      "Mindboggle101_atlases.zip": "adb803397b873c5d99abcec61ba9b1de",
+      "docs.zip": "67aed2e5ae669a920e99a144165a3c17",
+      "DKT_labeling_protocol.zip": "30b13f370e10a0282250e636e6b475b5",
+      "README.md": "3c0077a03eda0f6ed59323e69459805b",
+      "LICENSE": "c57007ca73fcacb52613233c0386c8af"
+    }
+  },
+  "split": {
+    "by": "subject, stratified by cohort",
+    "train_subjects": 71,
+    "val_subjects": 15,
+    "held_out_subjects": 15,
+    "slices": { "train": 7873, "val": 1699, "held_out": 1666 },
+    "note": "the names of the training and validation subjects stayed on the runtime; the held-out names are below"
+  },
+  "structures": [
+    { "name": "cerebral cortex", "provenance": "manual (DKT protocol)", "mean_dice": 0.928 },
+    { "name": "cerebral white matter", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.935 },
+    { "name": "lateral ventricle", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.848 },
+    { "name": "thalamus", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.888 },
+    { "name": "caudate", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.874 },
+    { "name": "putamen", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.855 },
+    { "name": "pallidum", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.758 },
+    { "name": "hippocampus", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.877 },
+    { "name": "amygdala", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.825 },
+    { "name": "brainstem", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.937 },
+    { "name": "cerebellum", "provenance": "automatic (FreeSurfer aseg)", "mean_dice": 0.966 }
+  ],
+  "by_provenance": {
+    "manual (DKT cortex)": { "structures": 1, "mean_of_structure_means": 0.9284 },
+    "automatic (FreeSurfer aseg)": { "structures": 10, "mean_of_structure_means": 0.8764 },
+    "read_this_first": "a score against FreeSurfer's labels means 'agrees with FreeSurfer', not 'correct'"
+  },
+  "per_subject_dice": {
+    "columns": ["cerebral cortex", "cerebral white matter", "lateral ventricle", "thalamus", "caudate", "putamen", "pallidum", "hippocampus", "amygdala", "brainstem", "cerebellum"],
+    "rows": {
+      "Colin27-1":       [0.407, 0.648, 0.179, 0.593, 0.474, 0.287, 0.192, 0.569, 0.276, 0.749, 0.677],
+      "HLN-12-1":        [0.963, 0.951, 0.854, 0.872, 0.853, 0.849, 0.390, 0.913, 0.856, 0.921, 0.965],
+      "MMRR-21-6":       [0.966, 0.949, 0.908, 0.913, 0.902, 0.902, 0.827, 0.905, 0.883, 0.956, 0.989],
+      "MMRR-21-18":      [0.952, 0.940, 0.924, 0.894, 0.844, 0.872, 0.809, 0.893, 0.884, 0.948, 0.989],
+      "MMRR-21-10":      [0.958, 0.956, 0.879, 0.915, 0.898, 0.889, 0.730, 0.901, 0.884, 0.954, 0.986],
+      "NKI-RS-22-5":     [0.967, 0.955, 0.938, 0.927, 0.930, 0.916, 0.862, 0.914, 0.893, 0.962, 0.993],
+      "NKI-RS-22-14":    [0.964, 0.961, 0.866, 0.883, 0.858, 0.875, 0.752, 0.897, 0.886, 0.956, 0.988],
+      "NKI-RS-22-11":    [0.964, 0.955, 0.906, 0.928, 0.929, 0.911, 0.868, 0.916, 0.879, 0.955, 0.990],
+      "NKI-RS-22-1":     [0.973, 0.962, 0.930, 0.923, 0.917, 0.906, 0.853, 0.921, 0.884, 0.957, 0.993],
+      "NKI-TRT-20-4":    [0.969, 0.958, 0.926, 0.937, 0.919, 0.904, 0.864, 0.921, 0.861, 0.955, 0.989],
+      "NKI-TRT-20-10":   [0.968, 0.950, 0.904, 0.891, 0.929, 0.882, 0.744, 0.797, 0.711, 0.941, 0.992],
+      "NKI-TRT-20-7":    [0.970, 0.960, 0.913, 0.918, 0.933, 0.914, 0.869, 0.904, 0.886, 0.943, 0.991],
+      "OASIS-TRT-20-15": [0.968, 0.957, 0.886, 0.909, 0.906, 0.893, 0.850, 0.894, 0.826, 0.956, 0.993],
+      "OASIS-TRT-20-16": [0.971, 0.961, 0.855, 0.921, 0.912, 0.914, 0.890, 0.902, 0.870, 0.951, 0.980],
+      "OASIS-TRT-20-8":  [0.967, 0.964, 0.851, 0.898, 0.912, 0.913, 0.870, 0.912, 0.889, 0.956, 0.979]
+    }
+  },
+  "what_the_numbers_are": [
+    "Dice overlap per structure, on the sampled axial slices of brains the run never trained on.",
+    "Not whole-volume Dice, not a clinical performance, and not a statement about any person.",
+    "Colin27-1 is a template brain built by averaging many scans of one person; it does not look like the others and scores far below them (mean 0.459 against 0.853 for the next worst subject). It is kept in the table rather than dropped.",
+    "Without Colin27-1 the cortex averages 0.966 (0.952 to 0.973) instead of 0.928.",
+    "The pallidum is the hardest structure (0.758), and it is also the smallest of the deep grey nuclei. HLN-12-1 scores 0.390 on it while scoring above 0.85 almost everywhere else."
+  ]
+}

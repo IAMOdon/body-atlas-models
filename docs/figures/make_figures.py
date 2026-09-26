@@ -27,6 +27,7 @@
 #  in docs/fonts/ (not versioned) or ~/Library/Fonts.
 # =============================================================================
 
+import json
 import logging
 import os
 import re
@@ -250,7 +251,7 @@ def fig01_atlas_map():
         f"{len(systems)} chapters and {n_organs} organs, each read healthy first "
         "and through its diseases after.",
         f"index of {n_organs} organs and {n_datasets} public datasets, each checked on "
-        "17 september 2026  ·  CATALOGUE.md  ·  no model trained",
+        "17 september 2026  ·  CATALOGUE.md  ·  one model trained so far: brain, use 1",
         glow="acier", seed=2601)
 
     cols = 4
@@ -308,8 +309,8 @@ def fig02_learning_path():
         "healthy first, then disease",
         "the order a student follows through every organ of the atlas, and "
         "what a model adds at each step.",
-        "schematic, no model trained  ·  worked example from the respiratory "
-        "chapter of CATALOGUE.md  ·  every output is shown beside the dataset's expert label",
+        "schematic  ·  worked example from the respiratory chapter of CATALOGUE.md  ·  "
+        "every output is shown beside the dataset's expert label",
         glow="encre", seed=2602)
 
     steps = [
@@ -373,8 +374,8 @@ def fig03_specialists():
         "one specialist per organ",
         "a small model for each organ, loaded when that organ is studied. "
         "adding an organ never changes another.",
-        f"design, no model trained  ·  {n_organs} organs in CATALOGUE.md  ·  notebooks open, "
-        "weights licensed model by model from their training data",
+        f"design  ·  {n_organs} organs in CATALOGUE.md  ·  one model trained so far  ·  "
+        "notebooks open, weights licensed model by model from their training data",
         glow="mousse", seed=2603)
 
     # --- left: the atlas ----------------------------------------------------
@@ -594,19 +595,19 @@ BRAIN_USES = [
 ]
 
 # rows, and what each use does on each row:
-#   "N" healthy labels confirmed in the retained data   (blue, filled)
-#   "n" healthy structure planned, labels to confirm     (blue, ring)
+#   "N" healthy labels a person drew                     (blue, filled)
+#   "A" healthy labels FreeSurfer produced, automatic     (blue, ring)
 #   "P" pathology labels                                 (orange, filled)
 #   "3" rebuilt in 3D from the 2D outputs                (ink ring)
 BRAIN_ROWS = [
     ("the brain as a whole case", ["", "", "P", "", ""]),
     ("cerebral cortex", ["N", "", "", "P", "3"]),
-    ("cerebral white matter", ["n", "", "", "P", "3"]),
-    ("deep grey nuclei", ["n", "", "", "P", "3"]),
+    ("cerebral white matter", ["A", "", "", "P", "3"]),
+    ("deep grey nuclei", ["A", "", "", "P", "3"]),
     ("hippocampus", ["N", "", "", "", "3"]),
-    ("ventricles", ["n", "", "", "", "3"]),
-    ("brainstem", ["n", "", "", "", "3"]),
-    ("cerebellum", ["n", "", "", "", "3"]),
+    ("ventricles", ["A", "", "", "", "3"]),
+    ("brainstem", ["A", "", "", "", "3"]),
+    ("cerebellum", ["A", "", "", "", "3"]),
     ("arteries of the circle of Willis", ["", "N", "", "", "3"]),
 ]
 
@@ -614,7 +615,7 @@ BRAIN_ROWS = [
 def mark(ax, x, y, kind, s=46):
     if kind == "N":
         ax.scatter([x], [y], s=s, color=BLUE, zorder=4)
-    elif kind == "n":
+    elif kind == "A":
         ax.scatter([x], [y], s=s, facecolors="none", edgecolors=BLUE,
                    linewidths=1.1, zorder=4)
     elif kind == "P":
@@ -630,8 +631,8 @@ def fig05_brain_map():
         "the brain, structure by structure",
         "eight structures and five uses, built in order. each use is its own model, "
         "trained on its own data.",
-        "schematic, no model trained  ·  retained datasets read from "
-        "organs/nervous-system/brain/DATASETS.md, checked 17 september 2026",
+        "the plan  ·  retained datasets read from organs/nervous-system/brain/DATASETS.md  ·  "
+        "use 1 is trained: see 03_use1_results",
         glow="acier", seed=2605)
 
     cols = [600 + i * 200 for i in range(len(BRAIN_USES))]
@@ -657,8 +658,8 @@ def fig05_brain_map():
                 mark(ax, x, y, m)
 
     ly = 108
-    items = [("N", "healthy labels in the chosen data"),
-             ("n", "healthy structure, labels to confirm"),
+    items = [("N", "healthy labels drawn by a person"),
+             ("A", "healthy labels from FreeSurfer, automatic"),
              ("P", "pathology labels"),
              ("3", "rebuilt in 3D from the 2D outputs")]
     lx = MARGIN
@@ -679,9 +680,8 @@ def fig06_brain_healthy_to_lesion():
         "every lesion is read against the healthy brain",
         "use 1 comes first. each lesion is then shown among the healthy structures "
         "it sits in, with its expert label beside it.",
-        "schematic, no model trained  ·  datasets from "
-        "organs/nervous-system/brain/DATASETS.md  ·  for learning, never to say what a "
-        "person has",
+        "schematic  ·  datasets from organs/nervous-system/brain/DATASETS.md  ·  only use 1 "
+        "is trained so far  ·  for learning, never to say what a person has",
         glow="braise", seed=2606)
 
     # --- left: the healthy reference ----------------------------------------
@@ -755,8 +755,89 @@ def fig06_brain_healthy_to_lesion():
     save(fig, "02_healthy_to_lesion.png", subdir="brain")
 
 
+# =============================================================================
+#  FIGURE 07 — brain use 1, what the optimised run scored
+#  Every number is read from the run's own record, results_t4.json, so the
+#  figure cannot drift from the notebook or the model card. One dot per
+#  held-out subject: the spread is the point, not the average.
+# =============================================================================
+def fig07_brain_use1_results():
+    path = os.path.join(BRAIN_DIR, "healthy-structure-segmentation", "results_t4.json")
+    if not os.path.exists(path):
+        sys.exit(f"no run record at {path}")
+    with open(path, encoding="utf-8") as fh:
+        res = json.load(fh)
+    rows = sorted(res["structures"], key=lambda s: -s["mean_dice"])
+    cols = res["per_subject_dice"]["columns"]
+    table = res["per_subject_dice"]["rows"]
+    run, cfg_run, split = res["run"], res["config"], res["split"]
+    outlier = min(table, key=lambda n: sum(table[n]) / len(table[n]))
+
+    fig, ax = frame(
+        "what the small model found, structure by structure",
+        f"one run on a {run['environment']['device']}: {split['train_subjects']} brains to "
+        f"train, {split['held_out_subjects']} held out. one dot per held-out brain.",
+        f"Dice on sampled axial slices  ·  {cfg_run['parameters']:,d} parameters, seed "
+        f"{run['seed']}  ·  Mindboggle-101 {res['dataset']['doi']}  ·  "
+        "no clinical claim, nothing about any person",
+        glow="mousse", seed=2607)
+
+    x0, x1 = 620, 1430                      # Dice 0.0 at x0, 1.0 at x1: the full range
+    def X(d):
+        return x0 + (x1 - x0) * d
+
+    top, step = 588, 40
+    for k in range(6):                      # axis first, under the dots
+        d = k * 0.2
+        ax.plot([X(d), X(d)], [top + 26, top - (len(rows) - 1) * step - 22],
+                color=GRID, lw=0.8, zorder=1)
+        ax.text(X(d), top + 38, f"{d:.1f}", fontname="Poppins", fontsize=5.4,
+                color=MUTED, ha="center")
+    ax.text(X(0.5), top + 62, "Dice overlap with the dataset's labels", fontname="Poppins",
+            fontsize=6.0, color=INK2, ha="center")
+
+    for i, row in enumerate(rows):
+        y = top - i * step
+        manual = row["provenance"].startswith("manual")
+        colour = BLUE if manual else INK2
+        ax.text(MARGIN, y, row["name"], fontname="Poppins", fontsize=6.2,
+                color=INK if manual else INK2, va="center")
+        ax.text(MARGIN + 300, y, f"{row['mean_dice']:.3f}", fontname="Poppins",
+                fontsize=6.2, color=INK if manual else INK2, va="center", ha="right")
+        ax.text(MARGIN + 320, y, "drawn by a person" if manual else "FreeSurfer",
+                fontname="Poppins", fontsize=5.0, color=MUTED, va="center")
+        j = cols.index(row["name"])
+        for name, values in table.items():
+            if name == outlier:
+                ax.scatter([X(values[j])], [y], s=34, facecolors="none", edgecolors=MUTED,
+                           linewidths=1.0, zorder=4)
+            else:
+                ax.scatter([X(values[j])], [y], s=16, color=colour, alpha=0.55, zorder=3)
+        ax.scatter([X(row["mean_dice"])], [y], s=58, color=colour, zorder=5)
+
+    ly = 132
+    ax.scatter([MARGIN + 6], [ly], s=58, color=BLUE)
+    ax.text(MARGIN + 22, ly, "mean, manual labels", fontname="Poppins", fontsize=5.6,
+            color=INK2, va="center")
+    ax.scatter([MARGIN + 246], [ly], s=58, color=INK2)
+    ax.text(MARGIN + 262, ly, "mean, FreeSurfer labels", fontname="Poppins", fontsize=5.6,
+            color=INK2, va="center")
+    ax.scatter([MARGIN + 516], [ly], s=16, color=INK2, alpha=0.55)
+    ax.text(MARGIN + 532, ly, "one held-out brain", fontname="Poppins", fontsize=5.6,
+            color=INK2, va="center")
+    ax.scatter([MARGIN + 736], [ly], s=34, facecolors="none", edgecolors=MUTED, linewidths=1.0)
+    ax.text(MARGIN + 752, ly, f"{outlier}, a template brain, unlike the others",
+            fontname="Poppins", fontsize=5.6, color=INK2, va="center")
+
+    ax.text(MARGIN, 92, "a score against FreeSurfer's labels means agreement with "
+            "FreeSurfer, not correctness", fontname="Poppins", fontsize=6.0, color=INK2)
+
+    save(fig, "03_use1_results.png", subdir="brain")
+
+
 FIGURES = [fig01_atlas_map, fig02_learning_path, fig03_specialists, fig04_licences,
-           fig05_brain_map, fig06_brain_healthy_to_lesion]
+           fig05_brain_map, fig06_brain_healthy_to_lesion,
+           fig07_brain_use1_results]
 
 if __name__ == "__main__":
     for f in FIGURES:
