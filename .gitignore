@@ -127,3 +127,7 @@ RESEARCH-PROTOCOL.md
 research/
 thoughtprocess.md
 private/
+
+# Training run outputs: weights, metrics and curves belong with the run, not in git.
+# A run writes them wherever it is launched, so catch the shape, not one name.
+out_*/

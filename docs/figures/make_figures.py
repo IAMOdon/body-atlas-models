@@ -41,7 +41,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as fm
-from matplotlib.patches import FancyBboxPatch
+from matplotlib.patches import FancyBboxPatch, Rectangle
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -835,9 +835,126 @@ def fig07_brain_use1_results():
     save(fig, "03_use1_results.png", subdir="brain")
 
 
+
+
+def fig08_brain_use1_v2_results():
+    """Version 2: what the expert labels bought, and what they cost in aseg agreement."""
+    path = os.path.join(BRAIN_DIR, "healthy-structure-segmentation", "results_v2.json")
+    if not os.path.exists(path):
+        sys.exit(f"no run record at {path}")
+    with open(path, encoding="utf-8") as fh:
+        res = json.load(fh)
+
+    after = res["results"]["against_manual"]["after_finetune"]
+    before = res["results"]["against_manual"]["before_finetune"]
+    aseg = res["results"]["against_aseg"]["after_finetune"]
+    rows = sorted(after, key=lambda n: -after[n]["dice"]["mean"])
+    folds = res["split"]["expert_folds"]
+    n_expert = sum(len(f) for f in folds)
+
+    fig, ax = frame(
+        "toward the labels a person drew",
+        f"{len(folds)} folds over the {n_expert} hand-labelled brains, each scored by a "
+        f"model that never saw it. the vermis starts at zero: FreeSurfer cannot isolate it.",
+        f"Dice, HD95 and ASSD on whole volumes, cross-validated  ·  "
+        f"{res['model']['parameters']:,d} parameters, seed {res['config']['seed']}  ·  "
+        f"Mindboggle-101 {res['records']['images_and_cortex']['doi']} + "
+        f"{res['records']['expert_subcortex']['doi']}  ·  no clinical claim",
+        glow="acier", seed=2709)
+
+    top, step = 620, 28.0                   # sixteen rows must clear the legend
+    bottom = top - (len(rows) - 1) * step
+
+    # ---- left panel: Dice, from stage one to fine-tuned, against both references
+    dx0, dx1, d_lo = 470, 940, 0.70
+    def DX(d):
+        return dx0 + (dx1 - dx0) * (max(d, d_lo) - d_lo) / (1 - d_lo)
+
+    for k in range(7):
+        d = d_lo + k * 0.05
+        ax.plot([DX(d), DX(d)], [top + 18, bottom - 18], color=GRID, lw=0.8, zorder=1)
+        ax.text(DX(d), top + 30, f"{d:.2f}", fontname="Poppins", fontsize=5.0,
+                color=MUTED, ha="center")
+    ax.text((dx0 + dx1) / 2, top + 52, "Dice on whole volumes", fontname="Poppins",
+            fontsize=6.0, color=INK2, ha="center")
+
+    # ---- right panel: the boundary, in millimetres
+    mx0, mx1, m_hi = 1055, 1430, 3.0
+    def MX(mm):
+        return mx0 + (mx1 - mx0) * min(mm, m_hi) / m_hi
+
+    for mm in (0, 1, 2, 3):
+        ax.plot([MX(mm), MX(mm)], [top + 18, bottom - 18], color=GRID, lw=0.8, zorder=1)
+        ax.text(MX(mm), top + 30, f"{mm:.0f}", fontname="Poppins", fontsize=5.0,
+                color=MUTED, ha="center")
+    ax.plot([MX(1), MX(1)], [top + 18, bottom - 18], color=MUTED, lw=0.8,
+            linestyle=(0, (2, 2)), zorder=2)
+    ax.text((mx0 + mx1) / 2, top + 52, "distance to the expert's boundary, mm",
+            fontname="Poppins", fontsize=6.0, color=INK2, ha="center")
+
+    for i, name in enumerate(rows):
+        y = top - i * step
+        a, b = after[name]["dice"]["mean"], before[name]["dice"]["mean"]
+        g = aseg[name]["dice"]["mean"]
+        star = name == "cerebellar vermis"
+
+        ax.text(MARGIN, y, name, fontname="Poppins", fontsize=5.8,
+                color=INK if star else INK2, va="center")
+        ax.text(MARGIN + 268, y, f"{a:.3f}", fontname="Poppins", fontsize=5.8,
+                color=INK, va="center", ha="right")
+
+        if b is not None:
+            if b < d_lo:                      # the vermis: it begins off the scale
+                ax.text(dx0 - 8, y, f"{b:.3f}", fontname="Poppins", fontsize=5.0,
+                        color=MUTED, va="center", ha="right")
+                arrow(ax, dx0 + 2, DX(a) - 4, y, colour=BLUE)
+            else:
+                arrow(ax, DX(b), DX(a) - 4, y, colour=BLUE)
+        if g is not None and g > 0:
+            ax.scatter([DX(g)], [y], s=26, facecolors="none", edgecolors=INK2,
+                       linewidths=0.9, zorder=4)
+        ax.scatter([DX(a)], [y], s=44 if star else 34, color=BLUE, zorder=5)
+
+        hd, assd = after[name]["hd95_mm"]["mean"], after[name]["assd_mm"]["mean"]
+        if hd is not None:
+            ax.add_patch(Rectangle((MX(0), y - 5), MX(hd) - MX(0), 10, facecolor=BLUE,
+                                   alpha=0.30 if not star else 0.50, edgecolor="none",
+                                   zorder=3))
+        if assd is not None:
+            ax.scatter([MX(assd)], [y], s=20, color=INK, zorder=5)
+
+    # ---- legend
+    ly = 150
+    arrow(ax, MARGIN, MARGIN + 34, ly, colour=BLUE)
+    ax.text(MARGIN + 44, ly, "aseg-trained to expert-tuned", fontname="Poppins",
+            fontsize=5.4, color=INK2, va="center")
+    ax.scatter([MARGIN + 286], [ly], s=34, color=BLUE)
+    ax.text(MARGIN + 300, ly, "vs the expert", fontname="Poppins", fontsize=5.4,
+            color=INK2, va="center")
+    ax.scatter([MARGIN + 424], [ly], s=26, facecolors="none", edgecolors=INK2,
+               linewidths=0.9)
+    ax.text(MARGIN + 438, ly, "the same model vs FreeSurfer", fontname="Poppins",
+            fontsize=5.4, color=INK2, va="center")
+    ax.add_patch(Rectangle((MARGIN + 690, ly - 5), 28, 10, facecolor=BLUE, alpha=0.30,
+                           edgecolor="none"))
+    ax.text(MARGIN + 726, ly, "HD95", fontname="Poppins", fontsize=5.4, color=INK2,
+            va="center")
+    ax.scatter([MARGIN + 796], [ly], s=20, color=INK)
+    ax.text(MARGIN + 810, ly, "ASSD", fontname="Poppins", fontsize=5.4, color=INK2,
+            va="center")
+    ax.text(MARGIN + 880, ly, "dashed line: one voxel", fontname="Poppins", fontsize=5.4,
+            color=MUTED, va="center")
+
+    ax.text(MARGIN, 110, "where the hollow mark sits left of the filled one, the model "
+            "left FreeSurfer to follow the expert  ·  every ASSD is under one voxel",
+            fontname="Poppins", fontsize=6.0, color=INK2)
+
+    save(fig, "04_use1_v2_results.png", subdir="brain")
+
+
 FIGURES = [fig01_atlas_map, fig02_learning_path, fig03_specialists, fig04_licences,
            fig05_brain_map, fig06_brain_healthy_to_lesion,
-           fig07_brain_use1_results]
+           fig07_brain_use1_results, fig08_brain_use1_v2_results]
 
 if __name__ == "__main__":
     for f in FIGURES:
