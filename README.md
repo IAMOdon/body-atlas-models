@@ -141,13 +141,21 @@ even when its weights cannot be.
 
 Two kinds of licence live here, and they are kept apart.
 
-**The repository** (code, notebooks, the catalogue, the documents) carries one
-permissive licence. Proposed, not yet chosen by Armand:
+**The repository** carries two permissive licences, one for each kind of thing in it:
 
-- **Code and notebooks: Apache License 2.0**, permissive with an explicit patent grant.
-- **Documents (README, catalogue, model cards): CC BY 4.0.**
+- **Code, notebooks, figure generators and git hooks: [Apache License 2.0](LICENSE)** —
+  permissive, with an explicit patent grant, which matters in a field as densely
+  patented as medical imaging.
+- **Documentation and figures: [CC BY 4.0](LICENSE-docs)** — the Markdown files, the
+  catalogue, the model cards, and the PNGs under `docs/figures/png/`.
 
-Until that choice is made, all rights are reserved by default.
+**Neither licence covers the datasets or the weights, and that is deliberate.**
+No medical data is distributed here: each dataset is fetched by its user from its
+provider, under that provider's own terms, which this repository cannot relicense
+([`DATASETS.md`](organs/nervous-system/brain/DATASETS.md) per organ, `DATA.md` per use).
+The weights are not published at all. Saying so plainly matters: a permissive licence on
+a repository about datasets could easily be read as a grant over the data itself, and it
+is not one. The full statement is at the end of [`LICENSE`](LICENSE).
 
 **The weights** carry **one licence per model**, set by the data that model was trained
 on and never wider than it. A model trained on CC0 or CC BY data can be released

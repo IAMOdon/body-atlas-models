@@ -1,0 +1,12 @@
+Body Atlas Models
+Copyright 2026 Armand Wegnez and the Body Atlas Models contributors.
+
+Code: Apache License 2.0 (LICENSE).
+Documentation and figures: CC BY 4.0 (LICENSE-docs).
+
+Not covered by either: the datasets, which are never redistributed here and
+stay under their providers' terms, and the model weights, which are not
+published. See the end of LICENSE.
+
+For learning anatomy and pathology from labelled public cases, never to say
+what a person has.
