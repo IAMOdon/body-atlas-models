@@ -38,16 +38,67 @@ been confirmed file by file, and no multi-subject dataset with manual whole-brai
 and a clear licence is in the catalogue yet. This is checked before any training; until
 then those structures are taught from the SPL/NAC reference atlas.
 
-## 2. Healthy: vascular (circle of Willis and named arteries)
+## 2. Healthy: the cerebral vessel network
+
+*Binary segmentation of the cerebral arteries on TOF-MRA, on healthy subjects only.
+Naming the individual arteries is a separate question, and the answer today is no: see
+the end of this section.*
 
 | Role | Dataset | Why | Weights ceiling | Access | Size |
 |---|---|---|---|---|---|
-| **Retained** | **TopCoW** · doi:10.5281/zenodo.15692630 | The only set with *named* artery labels: 12 segments of the circle of Willis, 250 training scans (125 paired CTA and TOF-MRA), plus graph edges for variants | Non-commercial unless the data owner permits | Open | Not stated |
-| Companion | Lausanne TOF-MRA aneurysm cohort (ds003949) | 127 healthy controls under CC0; 20 of them carry TopCoW labels in TopCoW's external sets | Permissive | Open | Not stated |
-| Set aside | IXI (MRA sequences) | Healthy MRA, but no vessel labels | Share-alike (CC BY-SA 3.0 or later) | Open | Not stated |
+| **Retained** | **IXI vessel annotations** (Bernadotte, Elfimov & Menshikov 2025) · doi:10.5281/zenodo.17393202 | 100 TOF-MRA of healthy adults from IXI with **binary** vessel masks: Frangi vesselness, then manual refinement by three annotators under three neurovascular surgeons. The only healthy, labelled, permissively licensed and directly downloadable set | **Share-alike** — the labels are CC BY 4.0, but the IXI images they annotate are CC BY-SA 3.0, and the stricter of the two governs | Open, direct | labels 6.6 MB; images from IXI |
+| Companion | COSTA, healthy subsets · doi:10.5281/zenodo.11025761 | 8 centres, 4 vendors, all manually annotated. Of 423 volumes, about 267 accessible healthy ones: IXI-Guys 60, IXI-HH 60, IXI-IOP 50, ICBM 50, LocH1 25 of 27, ADAM 22 of 107. Buys scanner and vendor variety the socle lacks | Non-commercial — *"released for academic research use only"*, whatever the record's licence field says | **Restricted**, by request | not stated |
+| Stress test | SMILE-UHURA · arXiv:2411.09593 | 18 annotated healthy volumes at **7 T, 300 µm isotropic** — an order of magnitude finer than the socle, and the honest way to show where a model trained at 0.47 mm stops working | No licence stated, so held back under the project rule | Synapse, by request | not stated |
+| Set aside | Lausanne TOF-MRA cohort (ds003949) · doi:10.18112/openneuro.ds003949.v1.0.0 | 127 healthy controls under CC0, but **no vessel labels**: the derivatives give controls only a skull-stripped volume, and the manual masks are aneurysms, on patients | Permissive, if labels ever appear | Open | not stated |
+| Set aside | CASILab / ITK-TubeTK (UNC) | About 100 healthy TOF-MRA, but the vascular models are centreline-and-radius tubes, not voxel masks, and there is no formal licence — *"may not be redistributed"*, and use outside the medical field needs written approval | No named licence, so held back | MIDAS / Kitware | not stated |
+| Set aside | BraVa · 61 healthy adults | Names the six arterial trees of the circle of Willis, but distributes **reconstructions only** — SWC trees and morphometry, no images and no voxel labels. Nothing to train a segmentation model on | No licence stated | NITRC / cng.gmu.edu | not stated |
 
-A permissively licensed model with named-artery labels is not possible from the
-catalogue today: the named labels come only from TopCoW.
+### What the retained set actually contains
+
+Checked on the files, 9 October 2026: the archive's MD5 matches the record
+(`96be3dd9d1413e8890f89721829a79f7`), it holds **100** NIfTI volumes, every one
+**512 x 512 x 100**, voxel spacing 0.469 x 0.469 x 0.8 mm for 98 of them and
+0.488 x 0.488 x 0.8 mm for the other two. Every volume takes **only the values 0 and 1**:
+the labels are binary, there is no artery naming in them. None is empty. Vessels occupy
+**0.261 % of the volume on average** (0.172 % to 0.421 %), which makes this a rarer class
+than anything in use 1 except the cerebellar vermis — the sampling and the loss have to
+be built for that from the start. One file is stored as float32 where the other 99 are
+int16; the values are the same.
+
+### The overlap trap, and the one case it catches
+
+IXI subjects appear in **three** different label sets, and combining them without
+checking subject identifiers would quietly put the same brain in training and in the
+held-out set:
+
+| Source | IXI subjects | Overlap with the retained 100 |
+|---|---|---|
+| Retained: Bernadotte 100 | IXI057 to IXI365 | — |
+| TopCoW external testset `MRA_IXI_HH` | 20, all Hammersmith | **1: `IXI057`** |
+| COSTA IXI-Guys, IXI-HH, IXI-IOP | 170 | unknown: the record is access-restricted, so the identifiers cannot be read without requesting it |
+
+The TopCoW list was read from the remote archive's central directory
+(IXI012, 013, 033, 034, 039, 048, 051, 052, 056, **057**, 614, 631, 632, 633, 636, 637,
+638, 643, 646, 661). **`IXI057` must be excluded** from any evaluation that also uses
+TopCoW labels. The COSTA identifiers have to be checked the day that access is granted,
+before a single COSTA volume joins the training set.
+
+### Naming the arteries is not possible on healthy subjects today
+
+**TopCoW** · doi:10.5281/zenodo.15692630 is the only public source of *named* circle of
+Willis labels: 13 vessel components, 125 paired CTA and MRA. But its cohort is not
+healthy. The challenge paper states it plainly: *"The TopCoW challenge cohort was composed
+of patients admitted to the Stroke Center of the University Hospital Zurich (USZ) in 2018
+and 2019 with suspicion of stroke-related neurological conditions"* (arXiv:2312.17670v5,
+section 2.1). Its external testsets do contain **40 healthy annotated cases** — 20 from
+the Lausanne control group and 20 from IXI-HH — but 40 subjects is an evaluation set, not
+a training set, and the labels carry TopCoW's own terms (*"Open use. Must provide the
+source. Use for commercial purposes requires permission of the data owner"*) whatever the
+licence of the underlying images.
+
+So the atlas can show the vessel network on a healthy brain, and it can measure it. It
+cannot yet put a name on each artery of a healthy brain. Naming is deferred to a separate
+use, which will have to be called what it is: anatomy learned from patients.
 
 ## 3. Pathology: classification
 

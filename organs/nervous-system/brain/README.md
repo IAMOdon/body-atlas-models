@@ -13,7 +13,7 @@ uses, built in this order, each in its own folder:
 | # | Use | Folder | What a model adds for a learner | Dataset retained | Weights ceiling |
 |---|---|---|---|---|---|
 | 1 | Healthy: structure segmentation (MRI) | [`healthy-structure-segmentation/`](healthy-structure-segmentation/) | Names and outlines cortex, white matter, deep grey nuclei, hippocampus, ventricles, brainstem, cerebellum | Mindboggle-101, with the Decathlon hippocampus task | Set by the source MRIs; share-alike for the hippocampus |
-| 2 | Healthy: vascular | [`healthy-vascular/`](healthy-vascular/) | Traces and names the arteries of the circle of Willis on MRA and CTA | TopCoW | Non-commercial unless the data owner permits |
+| 2 | Healthy: the cerebral vessel network | [`healthy-vascular/`](healthy-vascular/) | Outlines the cerebral arteries on TOF-MRA of healthy adults; naming each artery is deferred, no public healthy dataset carries named labels | IXI vessel annotations (Bernadotte 2025) | Share-alike, inherited from the IXI images |
 | 3 | Pathology: classification | [`pathology-classification/`](pathology-classification/) | Tumour type on MRI; haemorrhage and its subtype on CT, with the expert label beside each output | Cheng figshare (tumour type); RSNA ICH 2019 (haemorrhage) | Permissive (tumour type); non-commercial (haemorrhage) |
 | 4 | Pathology: segmentation | [`pathology-segmentation/`](pathology-segmentation/) | Outlines tumours, stroke lesions and MS lesions, set against the healthy brain of use 1 | BraTS and the Decathlon brain task (tumour); ISLES 2022 (stroke); MSLesSeg and MS3SEG (MS) | Non-commercial or share-alike (tumour); permissive (stroke, MS) |
 | 5 | 3D reconstruction | [`reconstruction-3d/`](reconstruction-3d/) | Rebuilds structures and lesions in 3D and places them in a healthy reference space | MNI ICBM152 2009 and the Open Anatomy SPL/NAC brain atlas | Permissive |
@@ -58,7 +58,7 @@ which stops if a dataset name it draws is no longer retained in `DATASETS.md`.
 | Use | State | What exists |
 |---|---|---|
 | 1 · healthy structures | **trained, version 2** | [`MODEL_CARD.md`](healthy-structure-segmentation/MODEL_CARD.md), [`DATA.md`](healthy-structure-segmentation/DATA.md), [`colab_train_v2.py`](healthy-structure-segmentation/colab_train_v2.py) and [`results_v2.json`](healthy-structure-segmentation/results_v2.json) for the 3D model, [`colab_train.py`](healthy-structure-segmentation/colab_train.py) and [`results_t4.json`](healthy-structure-segmentation/results_t4.json) for version 1, [`notebook.ipynb`](healthy-structure-segmentation/notebook.ipynb) (a CPU demonstrator, run in a minute) |
-| 2 · healthy vessels | dataset chosen | [`DATASETS.md`](DATASETS.md#2-healthy-vascular-circle-of-willis-and-named-arteries) |
+| 2 · healthy vessel network | dataset chosen | [`DATASETS.md`](DATASETS.md#2-healthy-the-cerebral-vessel-network) |
 | 3 · classification | dataset chosen | [`DATASETS.md`](DATASETS.md#3-pathology-classification) |
 | 4 · lesion segmentation | dataset chosen | [`DATASETS.md`](DATASETS.md#4-pathology-segmentation) |
 | 5 · 3D reconstruction | dataset chosen | [`DATASETS.md`](DATASETS.md#5-3d-reconstruction-after-2d) |
